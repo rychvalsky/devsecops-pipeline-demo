@@ -117,13 +117,19 @@ def test_render_markdown_summary_and_totals() -> None:
         Finding("SAST", "Bandit", "B105", "HIGH", "app/auth.py:16", "hardcoded"),
         Finding("DAST", "OWASP ZAP", "10021", "LOW", "http://x (x1)", "header missing"),
     ]
-    md = render_markdown(findings, STAGE_ORDER)
+    md = render_markdown(findings, STAGE_ORDER, attempted={"SAST", "DAST"})
 
     assert "# Security scan report" in md
     assert "| **Total** | | **2** | **HIGH** |" in md
-    assert "| Dependencies | - | _no report_ | - |" in md  # stage with no findings
+    assert "| Dependencies | - | _not run_ | - |" in md  # stage not attempted
     assert "## SAST — Bandit" in md
     assert "| HIGH | B105 | app/auth.py:16 | hardcoded |" in md
+
+
+def test_render_marks_attempted_but_empty_stage_as_clean() -> None:
+    md = render_markdown([], STAGE_ORDER, attempted={"SAST"})
+    assert "| SAST | Bandit | 0 | clean |" in md
+    assert "| DAST | - | _not run_ | - |" in md
 
 
 def test_collect_drops_exact_duplicates(tmp_path: Path) -> None:
@@ -147,7 +153,22 @@ def test_collect_drops_exact_duplicates(tmp_path: Path) -> None:
         trivy_config=None,
         zap=None,
     )
-    assert len(collect(args)) == 1
+    findings, attempted = collect(args)
+    assert len(findings) == 1
+    assert attempted == {"Dependencies"}
+
+
+def test_collect_skips_missing_files(tmp_path: Path) -> None:
+    args = argparse.Namespace(
+        bandit=str(tmp_path / "absent.sarif"),
+        pip_audit=None,
+        trivy_image=None,
+        trivy_config=None,
+        zap=None,
+    )
+    findings, attempted = collect(args)
+    assert findings == []
+    assert attempted == set()
 
 
 def test_main_writes_file_with_no_inputs(tmp_path: Path, capsys) -> None:

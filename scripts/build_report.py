@@ -160,7 +160,20 @@ def _sort_key(f: Finding) -> tuple[int, str, str]:
     return (-SEVERITY_RANK.get(f.severity, -1), f.where, f.ident)
 
 
-def render_markdown(findings: list[Finding], stage_order: list[str]) -> str:
+# Which tool owns each stage, for the rows that have zero findings.
+STAGE_TOOLS = {
+    "SAST": "Bandit",
+    "Dependencies": "pip-audit",
+    "Image (packages)": "Trivy",
+    "Image (config)": "Trivy",
+    "DAST": "OWASP ZAP",
+}
+
+
+def render_markdown(
+    findings: list[Finding], stage_order: list[str], attempted: set[str] | None = None
+) -> str:
+    attempted = attempted if attempted is not None else set(stage_order)
     by_stage: dict[str, list[Finding]] = {}
     for f in findings:
         by_stage.setdefault(f.stage, []).append(f)
@@ -169,11 +182,13 @@ def render_markdown(findings: list[Finding], stage_order: list[str]) -> str:
     lines += ["| Stage | Tool | Findings | Highest severity |", "|---|---|---:|---|"]
     for stage in stage_order:
         group = by_stage.get(stage)
-        if group is None:
-            lines.append(f"| {stage} | - | _no report_ | - |")
-            continue
-        tools = ", ".join(sorted({f.tool for f in group}))
-        lines.append(f"| {stage} | {tools} | {len(group)} | {_highest(group)} |")
+        if group:
+            tools = ", ".join(sorted({f.tool for f in group}))
+            lines.append(f"| {stage} | {tools} | {len(group)} | {_highest(group)} |")
+        elif stage in attempted:
+            lines.append(f"| {stage} | {STAGE_TOOLS.get(stage, '-')} | 0 | clean |")
+        else:
+            lines.append(f"| {stage} | - | _not run_ | - |")
     lines.append(f"| **Total** | | **{len(findings)}** | **{_highest(findings)}** |")
 
     for stage in stage_order:
@@ -194,22 +209,35 @@ def render_markdown(findings: list[Finding], stage_order: list[str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def collect(args: argparse.Namespace) -> list[Finding]:
+def collect(args: argparse.Namespace) -> tuple[list[Finding], set[str]]:
+    """Return (findings, attempted-stages). A stage counts as attempted when its
+    input path was given and the file exists -- so "ran, found nothing" reads
+    differently from "did not run"."""
     findings: list[Finding] = []
-    if args.bandit:
-        findings += parse_sarif(Path(args.bandit), "SAST", "Bandit")
-    if args.pip_audit:
-        findings += parse_pip_audit(Path(args.pip_audit))
-    if args.trivy_image:
-        findings += parse_sarif(Path(args.trivy_image), "Image (packages)", "Trivy")
-    if args.trivy_config:
-        findings += parse_sarif(Path(args.trivy_config), "Image (config)", "Trivy")
-    if args.zap:
-        findings += parse_zap(Path(args.zap))
+    attempted: set[str] = set()
+    plan = [
+        (args.bandit, "SAST", lambda p: parse_sarif(p, "SAST", "Bandit")),
+        (args.pip_audit, "Dependencies", parse_pip_audit),
+        (
+            args.trivy_image,
+            "Image (packages)",
+            lambda p: parse_sarif(p, "Image (packages)", "Trivy"),
+        ),
+        (args.trivy_config, "Image (config)", lambda p: parse_sarif(p, "Image (config)", "Trivy")),
+        (args.zap, "DAST", parse_zap),
+    ]
+    for raw_path, stage, parse in plan:
+        if not raw_path:
+            continue
+        path = Path(raw_path)
+        if not path.is_file():
+            continue
+        attempted.add(stage)
+        findings += parse(path)
     # Feeds sometimes list the same advisory twice (e.g. once per alias); a
     # Finding is a frozen dataclass, so dict.fromkeys drops exact duplicates
     # while keeping order.
-    return list(dict.fromkeys(findings))
+    return list(dict.fromkeys(findings)), attempted
 
 
 STAGE_ORDER = ["SAST", "Dependencies", "Image (packages)", "Image (config)", "DAST"]
@@ -225,8 +253,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default="security-report.md", help="output Markdown path")
     args = parser.parse_args(argv)
 
-    findings = collect(args)
-    Path(args.out).write_text(render_markdown(findings, STAGE_ORDER), encoding="utf-8")
+    findings, attempted = collect(args)
+    report = render_markdown(findings, STAGE_ORDER, attempted)
+    Path(args.out).write_text(report, encoding="utf-8")
     print(f"Wrote {args.out}: {len(findings)} findings, highest {_highest(findings)}")
     return 0
 
