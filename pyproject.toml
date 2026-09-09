@@ -31,3 +31,8 @@ filterwarnings = [
 
 [tool.coverage.run]
 source = ["app"]
+
+[tool.bandit]
+# SAST scans application code only. Test code is full of asserts (B101) and
+# throwaway literals that are not real findings.
+exclude_dirs = ["tests", ".venv"]

@@ -5,3 +5,6 @@ pytest==8.3.4
 pytest-cov==6.0.0
 httpx==0.28.1
 ruff==0.8.4
+
+# SAST (F4). Extras: toml = read config from pyproject.toml, sarif = SARIF output.
+bandit[sarif,toml]==1.9.4
