@@ -4,6 +4,8 @@ It exists to be the thing that flows through the DevSecOps pipeline
 (tests -> SAST -> dependency scan -> image scan -> DAST). Keep it minimal.
 
 Endpoints:
+    GET    /                 -- API root, no auth (also gives the DAST spider a
+                                starting point that links to /docs)
     GET    /health           -- liveness check, no auth
     POST   /notes            -- create a note
     GET    /notes            -- list notes
@@ -31,6 +33,17 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Notes API", version="0.1.0", lifespan=lifespan)
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    """Human-friendly entry point; also what the DAST spider crawls first."""
+    return {
+        "name": app.title,
+        "version": app.version,
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 @app.get("/health")

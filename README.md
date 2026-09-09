@@ -36,6 +36,7 @@ GitHub push / pull request
 
 | Method | Path               | Auth          | Purpose            |
 |--------|--------------------|---------------|--------------------|
+| GET    | `/`                | none          | API root / links   |
 | GET    | `/health`          | none          | liveness check     |
 | POST   | `/notes`           | `X-API-Key`   | create a note      |
 | GET    | `/notes`           | `X-API-Key`   | list notes         |
