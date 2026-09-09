@@ -1,4 +1,4 @@
 # Runtime dependencies. Pinned exactly so scans and builds are reproducible.
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-sqlmodel==0.0.22
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+sqlmodel==0.0.42
