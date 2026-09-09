@@ -25,8 +25,9 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query", 
 addopts = "-q --cov=app --cov-report=term-missing --cov-fail-under=95"
 testpaths = ["tests"]
 filterwarnings = [
-    # Third-party alias deprecation inside Starlette's TestClient -- not ours.
+    # Third-party deprecations inside Starlette's TestClient -- not ours.
     "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
 ]
 
 [tool.coverage.run]

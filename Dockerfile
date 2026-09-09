@@ -11,9 +11,11 @@ FROM python:3.13-slim-bookworm AS builder
 
 WORKDIR /app
 
-# Install into a self-contained venv we can copy wholesale into the next stage.
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+# Current pip/setuptools for the build itself.
+RUN pip install --no-cache-dir --upgrade pip setuptools
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -23,18 +25,35 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ---------------------------------------------------------------------------
 FROM python:3.13-slim-bookworm
 
+# Dedicated unprivileged account -- the container must not run as root
+# (Trivy config DS-0002).
+RUN useradd --create-home --uid 10001 appuser
+
 WORKDIR /app
 
 # Bring in the ready-made virtualenv from the builder stage.
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Harden: the runtime image never needs pip (the venv is already built).
+# Dropping pip also removes its *vendored* copies of setuptools and msgpack,
+# which image scanners report even though they are not importable packages.
+RUN rm -rf \
+      /usr/local/lib/python3.13/site-packages/pip* \
+      /usr/local/lib/python3.13/site-packages/setuptools* \
+      /usr/local/lib/python3.13/site-packages/pkg_resources \
+      /usr/local/lib/python3.13/site-packages/_distutils_hack \
+      /usr/local/bin/pip* \
+      /opt/venv/lib/python3.13/site-packages/pip* \
+      /opt/venv/bin/pip*
+
 # Application code (see .dockerignore for what stays out).
 COPY app ./app
 
-# DEMO WEAKNESS (fixed in F9): no `USER` instruction, so the container runs as
-# root. Trivy's config scan (F6) flags this as DS002 "Image user should not be
-# root". F9 adds a dedicated unprivileged user.
+USER appuser
+
+# Keep the SQLite file in the user's home; /app stays read-only to the app.
+ENV DATABASE_URL="sqlite:////home/appuser/notes.db"
 
 EXPOSE 8000
 

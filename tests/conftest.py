@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app.auth import SECRET_API_KEY
+from app.auth import API_KEY
 from app.db import get_session
 from app.main import app
 
@@ -47,4 +47,4 @@ def client_fixture(session: Session) -> Iterator[TestClient]:
 @pytest.fixture(name="auth")
 def auth_fixture() -> dict[str, str]:
     """Headers that satisfy the X-API-Key check."""
-    return {"X-API-Key": SECRET_API_KEY}
+    return {"X-API-Key": API_KEY}

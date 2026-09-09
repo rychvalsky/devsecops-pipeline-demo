@@ -83,13 +83,13 @@ jobs:
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
-      # Scan the application package and emit SARIF. `|| true`: a finding must be
-      # visible in the Security tab, not silently abort the pipeline. F9 removes
-      # the planted finding, after which this can be tightened to fail on issues.
+      # Since F9 there are no planted findings, so Bandit is a hard gate: a new
+      # HIGH/MEDIUM issue fails the job. The SARIF still uploads either way.
       - name: Run Bandit
-        run: bandit -c pyproject.toml -r app -f sarif -o bandit.sarif || true
+        run: bandit -c pyproject.toml -r app -f sarif -o bandit.sarif
 
       - name: Publish Bandit results to code scanning
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bandit.sarif

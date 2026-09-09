@@ -5,6 +5,9 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Local secrets (commit .env.example, never .env)
+.env
+
 # Local database
 *.db
 *.sqlite3

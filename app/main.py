@@ -13,6 +13,7 @@ Endpoints:
     DELETE /notes/{note_id}  -- delete one note
 
 Every /notes endpoint requires the `X-API-Key` header (see app/auth.py).
+Baseline security headers are added to every response by SecurityHeadersMiddleware.
 """
 
 from contextlib import asynccontextmanager
@@ -22,6 +23,7 @@ from sqlmodel import Session, select
 
 from app.auth import require_api_key
 from app.db import get_session, init_db
+from app.middleware import SecurityHeadersMiddleware
 from app.models import Note, NoteCreate, NoteRead
 
 
@@ -33,6 +35,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Notes API", version="0.1.0", lifespan=lifespan)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.get("/")
