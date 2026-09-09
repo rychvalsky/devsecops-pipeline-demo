@@ -1,0 +1,32 @@
+# Keep the build context (and final image) small: ship only app/ + requirements.
+
+.git/
+.github/
+.venv/
+venv/
+
+tests/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+__pycache__/
+*.py[cod]
+
+*.db
+*.sqlite3
+
+README.md
+LICENSE
+.gitignore
+.dockerignore
+pyproject.toml
+
+# Security scan outputs
+bandit.sarif
+pip-audit.json
+trivy-*.sarif
+zap-report.*
+security-report.md

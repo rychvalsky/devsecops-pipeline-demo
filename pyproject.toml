@@ -1,0 +1,33 @@
+# Tooling configuration only. Dependencies live in requirements*.txt so that the
+# CI pipeline (and Docker build) can install them with plain `pip`.
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+# E/F = pycodestyle + pyflakes, I = isort, B = bug-prone patterns, UP = pyupgrade.
+# Security linting is intentionally NOT done here -- Bandit owns that in the SAST
+# stage of the pipeline, so style and security stay separate concerns.
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's Depends()/Header()/Query() in parameter defaults is the intended
+# pattern, not the mutable-default bug B008 warns about.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query", "fastapi.Path"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.pytest.ini_options]
+# Every `pytest` run measures coverage of the app package and fails the run if
+# it drops below the floor -- the CI "test" stage relies on exactly this.
+addopts = "-q --cov=app --cov-report=term-missing --cov-fail-under=95"
+testpaths = ["tests"]
+filterwarnings = [
+    # Third-party alias deprecation inside Starlette's TestClient -- not ours.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]

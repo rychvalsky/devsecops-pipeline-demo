@@ -1,0 +1,13 @@
+# Local run + the "deploy test app" step of the pipeline (F7): the DAST stage
+# brings this up, waits for the healthcheck, then points OWASP ZAP at it.
+
+services:
+  api:
+    build: .
+    image: devsecops-pipeline-demo:local
+    ports:
+      # Host 8010 (host 8000 is often taken by other dev tools); container 8000.
+      - "8010:8000"
+    # SQLite lives inside the container; it is intentionally throwaway so every
+    # run (and every scan) starts from an empty database.
+    restart: unless-stopped

@@ -1,0 +1,3 @@
+# Normalize all text files to LF in the repo. The app runs in Linux (CI +
+# Docker), so committing CRLF would be a footgun.
+* text=auto eol=lf
