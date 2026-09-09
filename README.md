@@ -51,7 +51,7 @@ the pipeline can be seen going from red to green.
 
 | Weakness                                   | Caught by        |
 |--------------------------------------------|------------------|
-| API key hard-coded in source               | Bandit (SAST)    |
+| API key hard-coded in source (`SECRET_API_KEY`) | Bandit B105 (SAST) |
 | Non-constant-time key comparison           | code review      |
 | Outdated dependency with a known CVE        | pip-audit        |
 | Container runs as `root` (no `USER`)        | Trivy (config)   |
@@ -111,7 +111,7 @@ to container port 8000.
 | F1    | pytest test suite + coverage                   | done   |
 | F2    | Dockerfile + docker-compose                    | done   |
 | F3    | Base CI: lint + tests                          | done   |
-| F4    | SAST (Bandit)                                  | todo   |
+| F4    | SAST (Bandit)                                  | done   |
 | F5    | Dependency scan (pip-audit) + Dependabot       | todo   |
 | F6    | Docker build + image scan (Trivy)             | todo   |
 | F7    | Deploy test app + DAST (OWASP ZAP)             | todo   |
