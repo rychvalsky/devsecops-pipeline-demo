@@ -70,6 +70,16 @@ pipeline can be watched going from findings to clean.
 The `starlette` weakness was **real version drift**, not a fake package: the pin
 was a few months old and the transitive dependency had picked up advisories.
 
+### Result
+
+The aggregated report went from **27 findings (highest HIGH)** before remediation
+to **6 (highest LOW)**. What remains:
+
+- **5 × LOW** on `libpcre2-8-0`, a Debian base-image library with no fixed
+  version released yet — surfaced and accepted, not hidden. A base-image refresh
+  clears them when Debian ships the patch.
+- **1 × INFO** from ZAP confirming responses are now `Cache-Control: no-store`.
+
 ### Where findings show up
 
 | Stage | Surfaced in |
