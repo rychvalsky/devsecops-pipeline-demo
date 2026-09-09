@@ -53,9 +53,23 @@ the pipeline can be seen going from red to green.
 |--------------------------------------------|------------------|
 | API key hard-coded in source (`SECRET_API_KEY`) | Bandit B105 (SAST) |
 | Non-constant-time key comparison           | code review      |
-| Outdated dependency with a known CVE        | pip-audit        |
+| Stale pin: `fastapi==0.115.6` drags in a `starlette` with known CVEs | pip-audit + Dependabot |
 | Container runs as `root` (no `USER`)        | Trivy (config)   |
 | Missing security response headers          | OWASP ZAP (DAST) |
+
+> The dependency weakness is not a fake package — it is real version drift. The
+> `fastapi` pin is a few months old, and its transitive `starlette` has since
+> picked up advisories. F9 bumps `fastapi` to clear them.
+
+### Where findings show up
+
+| Stage | Surfaced in |
+|-------|-------------|
+| SAST (Bandit) | GitHub **code scanning** (Security tab), as SARIF |
+| Dependencies | **Dependabot alerts** (native) + `pip-audit` in CI (run summary + JSON artifact) |
+| Image scan (Trivy) | code scanning, as SARIF *(F6)* |
+| DAST (OWASP ZAP) | CI artifact (HTML/Markdown report) *(F7)* |
+| Everything | one aggregated report *(F8)* |
 
 ## Run it locally
 
@@ -112,7 +126,7 @@ to container port 8000.
 | F2    | Dockerfile + docker-compose                    | done   |
 | F3    | Base CI: lint + tests                          | done   |
 | F4    | SAST (Bandit)                                  | done   |
-| F5    | Dependency scan (pip-audit) + Dependabot       | todo   |
+| F5    | Dependency scan (pip-audit) + Dependabot       | done   |
 | F6    | Docker build + image scan (Trivy)             | todo   |
 | F7    | Deploy test app + DAST (OWASP ZAP)             | todo   |
 | F8    | Aggregated security report                     | todo   |

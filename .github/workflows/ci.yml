@@ -101,3 +101,37 @@ jobs:
         with:
           name: bandit-sarif
           path: bandit.sarif
+
+  deps:
+    name: Dependency scan (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      # Audit the runtime dependency tree (pip-audit resolves transitive deps
+      # from requirements.txt). Non-blocking: known-vuln drift in a pinned tree
+      # should be reported, and Dependabot opens the bump PR. F8 consumes the
+      # JSON; the Markdown copy lands in the run summary.
+      - name: Audit runtime dependencies
+        run: |
+          pip-audit -r requirements.txt --desc -f json -o pip-audit.json --progress-spinner off || true
+          {
+            echo "### pip-audit — runtime dependencies"
+            echo
+            pip-audit -r requirements.txt --desc -f markdown --progress-spinner off || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload pip-audit report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: pip-audit-report
+          path: pip-audit.json

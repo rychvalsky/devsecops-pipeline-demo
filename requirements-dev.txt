@@ -8,3 +8,6 @@ ruff==0.8.4
 
 # SAST (F4). Extras: toml = read config from pyproject.toml, sarif = SARIF output.
 bandit[sarif,toml]==1.9.4
+
+# Dependency vulnerability scan (F5).
+pip-audit==2.10.1
