@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: |
@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload Bandit SARIF artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: bandit-sarif
           path: bandit.sarif
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload pip-audit report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: pip-audit-report
           path: pip-audit.json
@@ -195,7 +195,7 @@ jobs:
 
       - name: Upload Trivy SARIF artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-sarif
           path: |
