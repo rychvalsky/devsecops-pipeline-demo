@@ -127,7 +127,7 @@ to container port 8000.
 | F3    | Base CI: lint + tests                          | done   |
 | F4    | SAST (Bandit)                                  | done   |
 | F5    | Dependency scan (pip-audit) + Dependabot       | done   |
-| F6    | Docker build + image scan (Trivy)             | todo   |
+| F6    | Docker build + image scan (Trivy)             | done   |
 | F7    | Deploy test app + DAST (OWASP ZAP)             | todo   |
 | F8    | Aggregated security report                     | todo   |
 | F9    | Remediate planted weaknesses + polish          | todo   |

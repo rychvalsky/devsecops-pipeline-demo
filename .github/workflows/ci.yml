@@ -135,3 +135,69 @@ jobs:
         with:
           name: pip-audit-report
           path: pip-audit.json
+
+  build:
+    name: Image build + scan (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # publish SARIF to the Security tab
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build image
+        run: docker build -t devsecops-pipeline-demo:ci .
+
+      # Prove the built image actually runs before we bother scanning it.
+      - name: Smoke-test the image
+        run: |
+          docker run -d --name api -p 8000:8000 devsecops-pipeline-demo:ci
+          for _ in $(seq 1 20); do
+            curl -fsS http://localhost:8000/health && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8000/health | grep -q '"status":"ok"'
+          docker rm -f api
+
+      # (a) Known vulnerabilities in the image's OS + Python packages.
+      - name: Trivy - image vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: devsecops-pipeline-demo:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-image.sarif
+          # exit-code defaults to 0 -> findings are reported, not fatal.
+
+      # (b) Misconfiguration in the Dockerfile -- expected: DS002 (runs as root).
+      - name: Trivy - Dockerfile misconfiguration
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: Dockerfile
+          format: sarif
+          output: trivy-config.sarif
+
+      - name: Publish Trivy image results to code scanning
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Publish Trivy config results to code scanning
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-config
+
+      - name: Upload Trivy SARIF artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: trivy-sarif
+          path: |
+            trivy-image.sarif
+            trivy-config.sarif
