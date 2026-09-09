@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: |
@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload Bandit SARIF artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: bandit-sarif
           path: bandit.sarif
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload pip-audit report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: pip-audit-report
           path: pip-audit.json
@@ -195,7 +195,7 @@ jobs:
 
       - name: Upload Trivy SARIF artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-sarif
           path: |
@@ -234,3 +234,38 @@ jobs:
       - name: Stop the app
         if: always()
         run: docker compose down
+
+  report:
+    name: Aggregated security report
+    runs-on: ubuntu-latest
+    needs: [test, sast, deps, build, dast]
+    if: always()  # still summarise whatever ran
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # Pull every previous job's artifact into artifacts/<artifact-name>/.
+      - name: Download scan artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Merge into one report
+        run: |
+          python scripts/build_report.py \
+            --bandit       artifacts/bandit-sarif/bandit.sarif \
+            --pip-audit    artifacts/pip-audit-report/pip-audit.json \
+            --trivy-image  artifacts/trivy-sarif/trivy-image.sarif \
+            --trivy-config artifacts/trivy-sarif/trivy-config.sarif \
+            --zap          artifacts/zap-baseline-report/report_json.json \
+            --out security-report.md
+          cat security-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload aggregated report
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-report
+          path: security-report.md

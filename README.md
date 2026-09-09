@@ -70,7 +70,7 @@ the pipeline can be seen going from red to green.
 | Dependencies | **Dependabot alerts** (native) + `pip-audit` in CI (run summary + JSON artifact) |
 | Image scan (Trivy) | code scanning, as SARIF *(F6)* |
 | DAST (OWASP ZAP) | CI artifact (HTML/Markdown report) *(F7)* |
-| Everything | one aggregated report *(F8)* |
+| Everything | one aggregated report — `report` job run summary + `security-report.md` artifact |
 
 ## Run it locally
 
@@ -130,7 +130,7 @@ to container port 8000.
 | F5    | Dependency scan (pip-audit) + Dependabot       | done   |
 | F6    | Docker build + image scan (Trivy)             | done   |
 | F7    | Deploy test app + DAST (OWASP ZAP)             | done   |
-| F8    | Aggregated security report                     | todo   |
+| F8    | Aggregated security report                     | done   |
 | F9    | Remediate planted weaknesses + polish          | todo   |
 
 ## License
