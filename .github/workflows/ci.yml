@@ -201,3 +201,36 @@ jobs:
           path: |
             trivy-image.sarif
             trivy-config.sarif
+
+  dast:
+    name: DAST (OWASP ZAP baseline)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      # "Deploy the test app": bring the container up on the runner and wait
+      # for it to report healthy before pointing a scanner at it.
+      - name: Start the app
+        run: |
+          docker compose up -d --build
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:8010/health && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8010/health | grep -q '"status":"ok"'
+
+      # Spider + passive scan only (no attacks). Non-blocking, and it does not
+      # open a GitHub issue -- the report is an artifact + a run-summary table.
+      - name: OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:8010
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-baseline-report
+
+      - name: Stop the app
+        if: always()
+        run: docker compose down
